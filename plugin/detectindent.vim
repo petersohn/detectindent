@@ -31,6 +31,10 @@ if !exists('g:detectindent_verbosity')
     let g:detectindent_verbosity = 1
 endif
 
+if !exists('g:detectindent_only_expandtab')
+    let g:detectindent_only_expandtab = 0
+endif
+
 fun! <SID>HasCStyleComments()
     return index(["c", "cpp", "java", "javascript", "php", "vala"], &ft) != -1
 endfun
@@ -139,7 +143,7 @@ fun! <SID>DetectIndent()
         " tabs only, no spaces
         let l:verbose_msg = "Detected tabs only and no spaces"
         setl noexpandtab
-        if s:GetValue("detectindent_preferred_indent")
+        if ! g:detectindent_only_expandtab && s:GetValue("detectindent_preferred_indent")
             let &l:shiftwidth  = g:detectindent_preferred_indent
             let &l:tabstop     = g:detectindent_preferred_indent
         endif
@@ -148,22 +152,27 @@ fun! <SID>DetectIndent()
         " spaces only, no tabs
         let l:verbose_msg = "Detected spaces only and no tabs"
         setl expandtab
-        let &l:shiftwidth  = l:shortest_leading_spaces_run
-        let &l:softtabstop = l:shortest_leading_spaces_run
+        if ! g:detectindent_only_expandtab
+            let &l:shiftwidth  = l:shortest_leading_spaces_run
+            let &l:softtabstop = l:shortest_leading_spaces_run
+        endif
 
     elseif l:has_leading_spaces && l:has_leading_tabs && ! s:GetValue("detectindent_preferred_when_mixed")
         " spaces and tabs
         let l:verbose_msg = "Detected spaces and tabs"
         setl noexpandtab
-        let &l:shiftwidth = l:shortest_leading_spaces_run
 
-        " mmmm, time to guess how big tabs are
-        if l:longest_leading_spaces_run <= 2
-            let &l:tabstop = 2
-        elseif l:longest_leading_spaces_run <= 4
-            let &l:tabstop = 4
-        else
-            let &l:tabstop = 8
+        if ! g:detectindent_only_expandtab
+            let &l:shiftwidth = l:shortest_leading_spaces_run
+
+            " mmmm, time to guess how big tabs are
+            if l:longest_leading_spaces_run <= 2
+                let &l:tabstop = 2
+            elseif l:longest_leading_spaces_run <= 4
+                let &l:tabstop = 4
+            else
+                let &l:tabstop = 8
+            endif
         endif
 
     else
